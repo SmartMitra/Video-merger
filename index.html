@@ -3,19 +3,23 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>My Video Editor</title>
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- FFmpeg -->
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
-
 </head>
 
 <body>
+
+  <!-- ========================= -->
+  <!-- HEADER -->
+  <!-- ========================= -->
 
   <header>
 
@@ -36,6 +40,8 @@
 
     <section class="toolbar">
 
+      <!-- ADD VIDEO -->
+
       <label class="upload-btn">
 
         ➕ Add Video
@@ -51,6 +57,8 @@
       </label>
 
 
+      <!-- MUSIC -->
+
       <label class="upload-btn">
 
         🎵 Add Music
@@ -64,6 +72,8 @@
 
       </label>
 
+
+      <!-- VOICE -->
 
       <label class="upload-btn">
 
@@ -79,7 +89,7 @@
       </label>
 
 
-      <!-- VIDEO RATIO -->
+      <!-- RATIO -->
 
       <select id="ratio">
 
@@ -94,6 +104,8 @@
       </select>
 
 
+      <!-- SAVE -->
+
       <button id="saveProject">
 
         💾 Save Project
@@ -105,13 +117,13 @@
 
 
     <!-- ========================= -->
-    <!-- VIDEO EDITOR -->
+    <!-- EDITOR -->
     <!-- ========================= -->
 
     <section class="editor">
 
 
-      <!-- VIDEO PREVIEW -->
+      <!-- PREVIEW -->
 
       <div class="preview-area">
 
@@ -123,6 +135,7 @@
           <video
             id="previewVideo"
             controls
+            playsinline
           ></video>
 
 
@@ -136,7 +149,7 @@
 
 
 
-      <!-- EDITING PANEL -->
+      <!-- EDITING -->
 
       <div class="controls">
 
@@ -179,6 +192,8 @@
         </label>
 
 
+        <!-- TRIM -->
+
         <button id="trimBtn">
 
           ✂️ Set Trim
@@ -215,7 +230,7 @@
         </label>
 
 
-        <!-- TEXT -->
+        <!-- CAPTION -->
 
         <label>
 
@@ -229,6 +244,8 @@
 
         </label>
 
+
+        <!-- ADD TEXT -->
 
         <button id="addText">
 
@@ -259,9 +276,7 @@
       >
 
         <p id="emptyMessage">
-
           No videos added yet.
-
         </p>
 
       </div>
@@ -296,11 +311,10 @@
 
 
   <!-- ========================= -->
-  <!-- MAIN JAVASCRIPT -->
+  <!-- JAVASCRIPT -->
   <!-- ========================= -->
 
   <script src="script.js"></script>
-
 
 </body>
 
