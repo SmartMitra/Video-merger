@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Video Editor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+  <h1>🎬 My Video Editor</h1>
+  <p>Simple • Fast • Browser Based</p>
+</header>
+
+<main>
+
+  <section class="toolbar">
+
+    <label class="upload-btn">
+      ➕ Add Video
+      <input id="videoInput" type="file" accept="video/*" multiple hidden>
+    </label>
+
+    <label class="upload-btn">
+      🎵 Add Music
+      <input id="musicInput" type="file" accept="audio/*" hidden>
+    </label>
+
+    <label class="upload-btn">
+      🎙️ Voice-over
+      <input id="voiceInput" type="file" accept="audio/*" hidden>
+    </label>
+
+    <select id="ratio">
+      <option value="16:9">16:9</option>
+      <option value="9:16">9:16</option>
+    </select>
+
+    <button id="saveProject">💾 Save Project</button>
+
+  </section>
+
+
+  <section class="editor">
+
+    <div class="preview-area">
+
+      <div id="previewBox" class="preview landscape">
+        <video id="previewVideo" controls></video>
+        <div id="textOverlay"></div>
+      </div>
+
+    </div>
+
+
+    <div class="controls">
+
+      <h2>✂️ Editing</h2>
+
+      <label>
+        Start
+        <input type="number" id="startTime" value="0" min="0" step="0.1">
+      </label>
+
+      <label>
+        End
+        <input type="number" id="endTime" value="0" min="0" step="0.1">
+      </label>
+
+      <button id="trimBtn">✂️ Set Trim</button>
+
+      <label>
+        Speed
+        <select id="speed">
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+        </select>
+      </label>
+
+      <label>
+        Text / Caption
+        <input type="text" id="caption" placeholder="Enter text">
+      </label>
+
+      <button id="addText">📝 Add Text</button>
+
+    </div>
+
+  </section>
+
+
+  <section>
+
+    <h2>📋 Video Timeline</h2>
+
+    <div id="timeline" class="timeline">
+      <p id="emptyMessage">No videos added yet.</p>
+    </div>
+
+  </section>
+
+
+  <section class="export">
+
+    <h2>🚀 Export</h2>
+
+    <button id="exportBtn">⬇️ Export Video</button>
+
+    <p id="status"></p>
+
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+
+</body>
+</html>
