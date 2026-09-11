@@ -1,30 +1,30 @@
-const videoInput = document.getElementById("videoInput");
-const musicInput = document.getElementById("musicInput");
-const voiceInput = document.getElementById("voiceInput");
+const { FFmpeg } = FFmpegWASM;
+const { fetchFile } = FFmpegUtil;
 
-const timeline = document.getElementById("timeline");
-const previewVideo = document.getElementById("previewVideo");
-const previewBox = document.getElementById("previewBox");
+const ffmpeg = new FFmpeg();
 
-const ratio = document.getElementById("ratio");
-const speed = document.getElementById("speed");
+let ffmpegLoaded = false;
 
-const startTime = document.getElementById("startTime");
-const endTime = document.getElementById("endTime");
+async function loadFFmpeg() {
+  if (ffmpegLoaded) return;
 
-const caption = document.getElementById("caption");
-const textOverlay = document.getElementById("textOverlay");
+  status.textContent = "⏳ Export engine loading...";
 
-const status = document.getElementById("status");
+  await ffmpeg.load({
+    coreURL:
+      "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
+    wasmURL:
+      "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm"
+  });
 
-let clips = [];
-let musicFile = null;
-let voiceFile = null;
-let currentClip = null;
+  ffmpegLoaded = true;
+
+  status.textContent = "✅ Export engine ready.";
+}
 
 
 // =============================
-// ADD VIDEO
+// ADD VIDEOS
 // =============================
 
 videoInput.addEventListener("change", function () {
@@ -33,30 +33,25 @@ videoInput.addEventListener("change", function () {
 
   files.forEach(function (file) {
 
-    if (!file.type.startsWith("video/")) {
-      return;
-    }
+    if (!file.type.startsWith("video/")) return;
 
-    const clip = {
+    clips.push({
       file: file,
       url: URL.createObjectURL(file),
       start: 0,
       end: null,
       speed: 1
-    };
-
-    clips.push(clip);
+    });
 
   });
 
   renderTimeline();
 
   if (clips.length > 0) {
-    selectClip(clips.length - files.length);
+    selectClip(clips.length - 1);
   }
 
   videoInput.value = "";
-
 });
 
 
@@ -69,10 +64,7 @@ function renderTimeline() {
   timeline.innerHTML = "";
 
   if (clips.length === 0) {
-
-    timeline.innerHTML =
-      "<p>No videos added yet.</p>";
-
+    timeline.innerHTML = "<p>No videos added yet.</p>";
     return;
   }
 
@@ -107,14 +99,12 @@ function renderTimeline() {
     `;
 
     timeline.appendChild(div);
-
   });
-
 }
 
 
 // =============================
-// SELECT VIDEO
+// SELECT CLIP
 // =============================
 
 function selectClip(index) {
@@ -139,44 +129,33 @@ function selectClip(index) {
         : previewVideo.duration;
 
   };
-
 }
 
 
 // =============================
-// MOVE LEFT
+// MOVE
 // =============================
 
 function moveLeft(index) {
 
   if (index <= 0) return;
 
-  const temp = clips[index - 1];
-
-  clips[index - 1] = clips[index];
-  clips[index] = temp;
+  [clips[index - 1], clips[index]] =
+    [clips[index], clips[index - 1]];
 
   renderTimeline();
-
   selectClip(index - 1);
 }
 
-
-// =============================
-// MOVE RIGHT
-// =============================
 
 function moveRight(index) {
 
   if (index >= clips.length - 1) return;
 
-  const temp = clips[index + 1];
-
-  clips[index + 1] = clips[index];
-  clips[index] = temp;
+  [clips[index + 1], clips[index]] =
+    [clips[index], clips[index + 1]];
 
   renderTimeline();
-
   selectClip(index + 1);
 }
 
@@ -197,10 +176,9 @@ function deleteClip(index) {
 
   if (clips.length > 0) {
 
-    const newIndex =
-      Math.min(index, clips.length - 1);
-
-    selectClip(newIndex);
+    selectClip(
+      Math.min(index, clips.length - 1)
+    );
 
   } else {
 
@@ -208,9 +186,7 @@ function deleteClip(index) {
 
     previewVideo.removeAttribute("src");
     previewVideo.load();
-
   }
-
 }
 
 
@@ -221,13 +197,7 @@ function deleteClip(index) {
 document.getElementById("trimBtn")
 .addEventListener("click", function () {
 
-  if (currentClip === null) {
-
-    status.textContent =
-      "पहले कोई video select करो.";
-
-    return;
-  }
+  if (currentClip === null) return;
 
   const start = Number(startTime.value);
   const end = Number(endTime.value);
@@ -235,7 +205,7 @@ document.getElementById("trimBtn")
   if (start < 0 || end <= start) {
 
     status.textContent =
-      "Start और End time सही डालो.";
+      "❌ Start और End सही डालो.";
 
     return;
   }
@@ -244,8 +214,7 @@ document.getElementById("trimBtn")
   clips[currentClip].end = end;
 
   status.textContent =
-    "✅ Trim settings saved.";
-
+    "✅ Trim saved.";
 });
 
 
@@ -262,9 +231,6 @@ speed.addEventListener("change", function () {
   clips[currentClip].speed = value;
 
   previewVideo.playbackRate = value;
-
-  status.textContent =
-    "⏩ Speed changed to " + value + "x";
 
 });
 
@@ -286,12 +252,11 @@ ratio.addEventListener("change", function () {
     previewBox.classList.add("landscape");
 
   }
-
 });
 
 
 // =============================
-// TEXT / CAPTION
+// TEXT
 // =============================
 
 document.getElementById("addText")
@@ -314,16 +279,14 @@ musicInput.addEventListener("change", function () {
   if (musicFile) {
 
     status.textContent =
-      "🎵 Music added: " +
-      musicFile.name;
+      "🎵 Music added: " + musicFile.name;
 
   }
-
 });
 
 
 // =============================
-// VOICE OVER
+// VOICE
 // =============================
 
 voiceInput.addEventListener("change", function () {
@@ -333,16 +296,14 @@ voiceInput.addEventListener("change", function () {
   if (voiceFile) {
 
     status.textContent =
-      "🎙️ Voice-over added: " +
-      voiceFile.name;
+      "🎙️ Voice-over added: " + voiceFile.name;
 
   }
-
 });
 
 
 // =============================
-// SAVE PROJECT SETTINGS
+// SAVE
 // =============================
 
 document.getElementById("saveProject")
@@ -364,7 +325,6 @@ document.getElementById("saveProject")
     }),
 
     caption: caption.value
-
   };
 
   localStorage.setItem(
@@ -379,21 +339,142 @@ document.getElementById("saveProject")
 
 
 // =============================
-// EXPORT
+// EXPORT ALL CLIPS
 // =============================
 
 document.getElementById("exportBtn")
-.addEventListener("click", function () {
+.addEventListener("click", async function () {
 
   if (clips.length === 0) {
 
     status.textContent =
-      "पहले video add करो.";
+      "❌ पहले videos add करो.";
 
     return;
   }
 
-  status.textContent =
-    "⚠️ Export engine अभी अगला step है.";
+  try {
+
+    this.disabled = true;
+
+    await loadFFmpeg();
+
+    status.textContent =
+      "🎬 सभी videos तैयार हो रही हैं...";
+
+
+    // Write videos to FFmpeg
+
+    for (let i = 0; i < clips.length; i++) {
+
+      status.textContent =
+        `⏳ Video ${i + 1}/${clips.length} loading...`;
+
+      const data =
+        await fetchFile(clips[i].file);
+
+      await ffmpeg.writeFile(
+        `input${i}.mp4`,
+        data
+      );
+    }
+
+
+    // Create concat list
+
+    let list = "";
+
+    for (let i = 0; i < clips.length; i++) {
+
+      list += `file 'input${i}.mp4'\n`;
+
+    }
+
+    await ffmpeg.writeFile(
+      "list.txt",
+      list
+    );
+
+
+    // Merge
+
+    status.textContent =
+      "🔗 सभी clips जोड़ी जा रही हैं...";
+
+
+    await ffmpeg.exec([
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      "list.txt",
+      "-c",
+      "copy",
+      "final.mp4"
+    ]);
+
+
+    // Read final file
+
+    status.textContent =
+      "📦 Final video तैयार हो रही है...";
+
+
+    const output =
+      await ffmpeg.readFile("final.mp4");
+
+
+    const blob =
+      new Blob(
+        [output.buffer],
+        { type: "video/mp4" }
+      );
+
+
+    const downloadURL =
+      URL.createObjectURL(blob);
+
+
+    // Automatic download
+
+    const link =
+      document.createElement("a");
+
+    link.href = downloadURL;
+
+    link.download =
+      "My-Final-Video.mp4";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+
+    setTimeout(function () {
+
+      URL.revokeObjectURL(downloadURL);
+
+    }, 60000);
+
+
+    status.textContent =
+      "✅ Final video download शुरू हो गया!";
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "❌ Export failed: " + error.message;
+
+  } finally {
+
+    this.disabled = false;
+
+  }
 
 });
