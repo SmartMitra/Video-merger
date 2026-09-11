@@ -1,122 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>My Video Editor</title>
+
   <link rel="stylesheet" href="style.css">
+
+  <!-- FFmpeg -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+
 </head>
 
 <body>
 
-<header>
-  <h1>🎬 My Video Editor</h1>
-  <p>Simple • Fast • Browser Based</p>
-</header>
+  <header>
 
-<main>
+    <h1>🎬 My Video Editor</h1>
 
-  <section class="toolbar">
+    <p>
+      Simple • Fast • Browser Based
+    </p>
 
-    <label class="upload-btn">
-      ➕ Add Video
-      <input id="videoInput" type="file" accept="video/*" multiple hidden>
-    </label>
-
-    <label class="upload-btn">
-      🎵 Add Music
-      <input id="musicInput" type="file" accept="audio/*" hidden>
-    </label>
-
-    <label class="upload-btn">
-      🎙️ Voice-over
-      <input id="voiceInput" type="file" accept="audio/*" hidden>
-    </label>
-
-    <select id="ratio">
-      <option value="16:9">16:9</option>
-      <option value="9:16">9:16</option>
-    </select>
-
-    <button id="saveProject">💾 Save Project</button>
-
-  </section>
+  </header>
 
 
-  <section class="editor">
+  <main>
 
-    <div class="preview-area">
+    <!-- ========================= -->
+    <!-- TOOLBAR -->
+    <!-- ========================= -->
 
-      <div id="previewBox" class="preview landscape">
-        <video id="previewVideo" controls></video>
-        <div id="textOverlay"></div>
+    <section class="toolbar">
+
+      <label class="upload-btn">
+
+        ➕ Add Video
+
+        <input
+          id="videoInput"
+          type="file"
+          accept="video/*"
+          multiple
+          hidden
+        >
+
+      </label>
+
+
+      <label class="upload-btn">
+
+        🎵 Add Music
+
+        <input
+          id="musicInput"
+          type="file"
+          accept="audio/*"
+          hidden
+        >
+
+      </label>
+
+
+      <label class="upload-btn">
+
+        🎙️ Voice-over
+
+        <input
+          id="voiceInput"
+          type="file"
+          accept="audio/*"
+          hidden
+        >
+
+      </label>
+
+
+      <!-- VIDEO RATIO -->
+
+      <select id="ratio">
+
+        <option value="16:9">
+          16:9 — YouTube
+        </option>
+
+        <option value="9:16">
+          9:16 — Shorts
+        </option>
+
+      </select>
+
+
+      <button id="saveProject">
+
+        💾 Save Project
+
+      </button>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- VIDEO EDITOR -->
+    <!-- ========================= -->
+
+    <section class="editor">
+
+
+      <!-- VIDEO PREVIEW -->
+
+      <div class="preview-area">
+
+        <div
+          id="previewBox"
+          class="preview landscape"
+        >
+
+          <video
+            id="previewVideo"
+            controls
+          ></video>
+
+
+          <!-- TEXT -->
+
+          <div id="textOverlay"></div>
+
+        </div>
+
       </div>
 
-    </div>
 
 
-    <div class="controls">
+      <!-- EDITING PANEL -->
 
-      <h2>✂️ Editing</h2>
+      <div class="controls">
 
-      <label>
-        Start
-        <input type="number" id="startTime" value="0" min="0" step="0.1">
-      </label>
-
-      <label>
-        End
-        <input type="number" id="endTime" value="0" min="0" step="0.1">
-      </label>
-
-      <button id="trimBtn">✂️ Set Trim</button>
-
-      <label>
-        Speed
-        <select id="speed">
-          <option value="0.5">0.5x</option>
-          <option value="1" selected>1x</option>
-          <option value="1.5">1.5x</option>
-          <option value="2">2x</option>
-        </select>
-      </label>
-
-      <label>
-        Text / Caption
-        <input type="text" id="caption" placeholder="Enter text">
-      </label>
-
-      <button id="addText">📝 Add Text</button>
-
-    </div>
-
-  </section>
+        <h2>
+          ✂️ Editing
+        </h2>
 
 
-  <section>
+        <!-- START -->
 
-    <h2>📋 Video Timeline</h2>
+        <label>
 
-    <div id="timeline" class="timeline">
-      <p id="emptyMessage">No videos added yet.</p>
-    </div>
+          Start
 
-  </section>
+          <input
+            type="number"
+            id="startTime"
+            value="0"
+            min="0"
+            step="0.1"
+          >
+
+        </label>
 
 
-  <section class="export">
+        <!-- END -->
 
-    <h2>🚀 Export</h2>
+        <label>
 
-    <button id="exportBtn">⬇️ Export Video</button>
+          End
 
-    <p id="status"></p>
+          <input
+            type="number"
+            id="endTime"
+            value="0"
+            min="0"
+            step="0.1"
+          >
 
-  </section>
+        </label>
 
-</main>
 
-<script src="script.js"></script>
+        <button id="trimBtn">
+
+          ✂️ Set Trim
+
+        </button>
+
+
+        <!-- SPEED -->
+
+        <label>
+
+          Speed
+
+          <select id="speed">
+
+            <option value="0.5">
+              0.5x
+            </option>
+
+            <option value="1" selected>
+              1x
+            </option>
+
+            <option value="1.5">
+              1.5x
+            </option>
+
+            <option value="2">
+              2x
+            </option>
+
+          </select>
+
+        </label>
+
+
+        <!-- TEXT -->
+
+        <label>
+
+          Text / Caption
+
+          <input
+            type="text"
+            id="caption"
+            placeholder="Enter text"
+          >
+
+        </label>
+
+
+        <button id="addText">
+
+          📝 Add Text
+
+        </button>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- TIMELINE -->
+    <!-- ========================= -->
+
+    <section>
+
+      <h2>
+        📋 Video Timeline
+      </h2>
+
+
+      <div
+        id="timeline"
+        class="timeline"
+      >
+
+        <p id="emptyMessage">
+
+          No videos added yet.
+
+        </p>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ========================= -->
+    <!-- EXPORT -->
+    <!-- ========================= -->
+
+    <section class="export">
+
+      <h2>
+        🚀 Export
+      </h2>
+
+
+      <button id="exportBtn">
+
+        ⬇️ Export Video
+
+      </button>
+
+
+      <p id="status"></p>
+
+    </section>
+
+  </main>
+
+
+  <!-- ========================= -->
+  <!-- MAIN JAVASCRIPT -->
+  <!-- ========================= -->
+
+  <script src="script.js"></script>
+
 
 </body>
+
 </html>
