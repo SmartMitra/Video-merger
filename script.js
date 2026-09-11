@@ -1,6 +1,11 @@
-// =============================
+// ========================================
+// MY VIDEO EDITOR - SCRIPT
+// ========================================
+
+
+// ========================================
 // ELEMENTS
-// =============================
+// ========================================
 
 const videoInput = document.getElementById("videoInput");
 const musicInput = document.getElementById("musicInput");
@@ -21,538 +26,664 @@ const textOverlay = document.getElementById("textOverlay");
 
 const status = document.getElementById("status");
 
+const trimBtn = document.getElementById("trimBtn");
+const addTextBtn = document.getElementById("addText");
+const saveProjectBtn = document.getElementById("saveProject");
+const exportBtn = document.getElementById("exportBtn");
 
-// =============================
-// VARIABLES
-// =============================
+
+// ========================================
+// DATA
+// ========================================
 
 let clips = [];
+
 let musicFile = null;
+
 let voiceFile = null;
+
 let currentClip = null;
 
-let ffmpeg = null;
-let ffmpegLoaded = false;
+
+// ========================================
+// STATUS
+// ========================================
+
+function showStatus(message) {
+    status.textContent = message;
+}
 
 
-// =============================
+// ========================================
 // ADD VIDEO
-// =============================
+// ========================================
 
 videoInput.addEventListener("change", function () {
 
-  const files = Array.from(this.files);
+    const files = Array.from(this.files);
 
-  files.forEach(function (file) {
-
-    if (!file.type.startsWith("video/")) {
-      return;
+    if (files.length === 0) {
+        return;
     }
 
-    clips.push({
-      file: file,
-      url: URL.createObjectURL(file),
-      start: 0,
-      end: null,
-      speed: 1
+    files.forEach(function (file) {
+
+        if (!file.type.startsWith("video/")) {
+            return;
+        }
+
+        const videoURL = URL.createObjectURL(file);
+
+        clips.push({
+
+            file: file,
+
+            url: videoURL,
+
+            name: file.name,
+
+            start: 0,
+
+            end: null,
+
+            speed: 1
+
+        });
+
     });
 
-  });
+    renderTimeline();
 
-  renderTimeline();
+    // Automatically select the newest video
 
-  if (clips.length > 0) {
-    selectClip(clips.length - 1);
-  }
+    if (clips.length > 0) {
 
-  videoInput.value = "";
+        selectClip(clips.length - 1);
+
+    }
+
+    showStatus(
+        `${files.length} video added successfully.`
+    );
+
+    // Allow selecting the same file again
+
+    this.value = "";
+
 });
 
 
-// =============================
-// TIMELINE
-// =============================
+// ========================================
+// RENDER TIMELINE
+// ========================================
 
 function renderTimeline() {
 
-  timeline.innerHTML = "";
+    timeline.innerHTML = "";
 
-  if (clips.length === 0) {
+    if (clips.length === 0) {
 
-    timeline.innerHTML =
-      "<p>No videos added yet.</p>";
+        timeline.innerHTML =
+            "<p>No videos added yet.</p>";
 
-    return;
-  }
+        return;
 
-  clips.forEach(function (clip, index) {
+    }
 
-    const div = document.createElement("div");
 
-    div.className = "clip";
+    clips.forEach(function (clip, index) {
 
-    div.innerHTML = `
-      <video src="${clip.url}" muted></video>
+        const box =
+            document.createElement("div");
 
-      <div class="clip-name">
-        ${index + 1}. ${clip.file.name}
-      </div>
+        box.className = "clip";
 
-      <button onclick="selectClip(${index})">
-        ✏️ Edit
-      </button>
 
-      <button onclick="moveLeft(${index})">
-        ◀
-      </button>
+        box.innerHTML = `
 
-      <button onclick="moveRight(${index})">
-        ▶
-      </button>
+            <video
+                src="${clip.url}"
+                muted
+                preload="metadata"
+            ></video>
 
-      <button onclick="deleteClip(${index})">
-        🗑️ Delete
-      </button>
-    `;
+            <div class="clip-name">
+                ${index + 1}. ${escapeHTML(clip.name)}
+            </div>
 
-    timeline.appendChild(div);
-  });
+            <button
+                onclick="selectClip(${index})"
+            >
+                ✏️ Edit
+            </button>
+
+            <button
+                onclick="moveLeft(${index})"
+            >
+                ◀
+            </button>
+
+            <button
+                onclick="moveRight(${index})"
+            >
+                ▶
+            </button>
+
+            <button
+                onclick="deleteClip(${index})"
+            >
+                🗑️ Delete
+            </button>
+
+        `;
+
+
+        timeline.appendChild(box);
+
+    });
+
 }
 
 
-// =============================
+// ========================================
+// ESCAPE TEXT
+// ========================================
+
+function escapeHTML(text) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+
+    return div.innerHTML;
+
+}
+
+
+// ========================================
 // SELECT CLIP
-// =============================
+// ========================================
 
 function selectClip(index) {
 
-  if (!clips[index]) return;
+    if (!clips[index]) {
+        return;
+    }
 
-  currentClip = index;
 
-  const clip = clips[index];
+    currentClip = index;
 
-  previewVideo.src = clip.url;
 
-  previewVideo.playbackRate = clip.speed;
+    const clip =
+        clips[index];
 
-  previewVideo.onloadedmetadata = function () {
 
-    startTime.value = clip.start || 0;
+    // Show video
 
-    endTime.value =
-      clip.end !== null
-        ? clip.end
-        : previewVideo.duration;
-  };
+    previewVideo.src =
+        clip.url;
+
+
+    previewVideo.load();
+
+
+    // Speed
+
+    previewVideo.playbackRate =
+        clip.speed || 1;
+
+
+    // Metadata
+
+    previewVideo.onloadedmetadata =
+        function () {
+
+            startTime.value =
+                clip.start || 0;
+
+
+            endTime.value =
+                clip.end !== null
+                    ? clip.end
+                    : previewVideo.duration;
+
+        };
+
+
+    showStatus(
+        `Editing video ${index + 1}`
+    );
+
 }
 
 
-// =============================
+// ========================================
 // MOVE LEFT
-// =============================
+// ========================================
 
 function moveLeft(index) {
 
-  if (index <= 0) return;
+    if (index <= 0) {
+        return;
+    }
 
-  [clips[index - 1], clips[index]] =
-    [clips[index], clips[index - 1]];
 
-  renderTimeline();
+    const temp =
+        clips[index - 1];
 
-  selectClip(index - 1);
+
+    clips[index - 1] =
+        clips[index];
+
+
+    clips[index] =
+        temp;
+
+
+    renderTimeline();
+
+
+    selectClip(index - 1);
+
 }
 
 
-// =============================
+// ========================================
 // MOVE RIGHT
-// =============================
+// ========================================
 
 function moveRight(index) {
 
-  if (index >= clips.length - 1) return;
+    if (index >= clips.length - 1) {
+        return;
+    }
 
-  [clips[index + 1], clips[index]] =
-    [clips[index], clips[index + 1]];
 
-  renderTimeline();
+    const temp =
+        clips[index + 1];
 
-  selectClip(index + 1);
+
+    clips[index + 1] =
+        clips[index];
+
+
+    clips[index] =
+        temp;
+
+
+    renderTimeline();
+
+
+    selectClip(index + 1);
+
 }
 
 
-// =============================
-// DELETE
-// =============================
+// ========================================
+// DELETE VIDEO
+// ========================================
 
 function deleteClip(index) {
 
-  if (!clips[index]) return;
+    if (!clips[index]) {
+        return;
+    }
 
-  URL.revokeObjectURL(clips[index].url);
 
-  clips.splice(index, 1);
-
-  renderTimeline();
-
-  if (clips.length > 0) {
-
-    selectClip(
-      Math.min(index, clips.length - 1)
+    URL.revokeObjectURL(
+        clips[index].url
     );
 
-  } else {
 
-    currentClip = null;
+    clips.splice(index, 1);
 
-    previewVideo.removeAttribute("src");
-    previewVideo.load();
-  }
-}
 
+    renderTimeline();
 
-// =============================
-// TRIM
-// =============================
 
-document.getElementById("trimBtn")
-.addEventListener("click", function () {
+    if (clips.length > 0) {
 
-  if (currentClip === null) {
+        const newIndex =
+            Math.min(
+                index,
+                clips.length - 1
+            );
 
-    status.textContent =
-      "पहले video select करो.";
 
-    return;
-  }
+        selectClip(newIndex);
 
-  const start = Number(startTime.value);
-  const end = Number(endTime.value);
+    } else {
 
-  if (start < 0 || end <= start) {
+        currentClip = null;
 
-    status.textContent =
-      "❌ Start और End सही डालो.";
 
-    return;
-  }
+        previewVideo.pause();
 
-  clips[currentClip].start = start;
-  clips[currentClip].end = end;
-
-  status.textContent =
-    "✅ Trim saved.";
-});
-
-
-// =============================
-// SPEED
-// =============================
-
-speed.addEventListener("change", function () {
-
-  if (currentClip === null) return;
-
-  const value = Number(this.value);
-
-  clips[currentClip].speed = value;
-
-  previewVideo.playbackRate = value;
-});
-
-
-// =============================
-// RATIO
-// =============================
-
-ratio.addEventListener("change", function () {
-
-  if (this.value === "9:16") {
-
-    previewBox.classList.remove("landscape");
-    previewBox.classList.add("portrait");
-
-  } else {
-
-    previewBox.classList.remove("portrait");
-    previewBox.classList.add("landscape");
-  }
-});
-
-
-// =============================
-// TEXT
-// =============================
-
-document.getElementById("addText")
-.addEventListener("click", function () {
-
-  textOverlay.textContent =
-    caption.value;
-});
-
-
-// =============================
-// MUSIC
-// =============================
-
-musicInput.addEventListener("change", function () {
-
-  musicFile = this.files[0];
-
-  if (musicFile) {
-
-    status.textContent =
-      "🎵 Music added: " + musicFile.name;
-  }
-});
-
-
-// =============================
-// VOICE
-// =============================
-
-voiceInput.addEventListener("change", function () {
-
-  voiceFile = this.files[0];
-
-  if (voiceFile) {
-
-    status.textContent =
-      "🎙️ Voice-over added: " + voiceFile.name;
-  }
-});
-
-
-// =============================
-// SAVE PROJECT
-// =============================
-
-document.getElementById("saveProject")
-.addEventListener("click", function () {
-
-  const project = {
-
-    ratio: ratio.value,
-
-    clips: clips.map(function (clip) {
-
-      return {
-        name: clip.file.name,
-        start: clip.start,
-        end: clip.end,
-        speed: clip.speed
-      };
-    }),
-
-    caption: caption.value
-  };
-
-  localStorage.setItem(
-    "myVideoEditorProject",
-    JSON.stringify(project)
-  );
-
-  status.textContent =
-    "💾 Project settings saved.";
-});
-
-
-// =============================
-// LOAD FFMPEG
-// =============================
-
-async function loadFFmpeg() {
-
-  if (ffmpegLoaded) return;
-
-  if (
-    typeof FFmpegWASM === "undefined" ||
-    typeof FFmpegUtil === "undefined"
-  ) {
-
-    throw new Error(
-      "FFmpeg library load नहीं हुई."
-    );
-  }
-
-  ffmpeg =
-    new FFmpegWASM.FFmpeg();
-
-  status.textContent =
-    "⏳ Export engine loading...";
-
-  const baseURL =
-    "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
-
-  await ffmpeg.load({
-
-    coreURL:
-      baseURL + "/ffmpeg-core.js",
-
-    wasmURL:
-      baseURL + "/ffmpeg-core.wasm"
-
-  });
-
-  ffmpegLoaded = true;
-
-  status.textContent =
-    "✅ Export engine ready.";
-}
-
-
-// =============================
-// EXPORT ALL CLIPS
-// =============================
-
-document.getElementById("exportBtn")
-.addEventListener("click", async function () {
-
-  if (clips.length === 0) {
-
-    status.textContent =
-      "❌ पहले videos add करो.";
-
-    return;
-  }
-
-  try {
-
-    this.disabled = true;
-
-    await loadFFmpeg();
-
-    status.textContent =
-      "🎬 Videos तैयार हो रही हैं...";
-
-
-    // Upload clips into FFmpeg
-
-    for (let i = 0; i < clips.length; i++) {
-
-      status.textContent =
-        `⏳ Video ${i + 1}/${clips.length} loading...`;
-
-      const data =
-        await FFmpegUtil.fetchFile(
-          clips[i].file
+        previewVideo.removeAttribute(
+            "src"
         );
 
-      await ffmpeg.writeFile(
-        `input${i}.mp4`,
-        data
-      );
+        previewVideo.load();
+
+
+        startTime.value = 0;
+
+        endTime.value = 0;
+
     }
 
 
-    // Create list
-
-    let list = "";
-
-    for (let i = 0; i < clips.length; i++) {
-
-      list += `file 'input${i}.mp4'\n`;
-    }
-
-    await ffmpeg.writeFile(
-      "list.txt",
-      list
+    showStatus(
+        "Video deleted."
     );
 
-
-    // Merge
-
-    status.textContent =
-      "🔗 Clips जोड़ी जा रही हैं...";
+}
 
 
-    await ffmpeg.exec([
+// ========================================
+// TRIM
+// ========================================
 
-      "-f",
-      "concat",
+trimBtn.addEventListener(
+    "click",
+    function () {
 
-      "-safe",
-      "0",
+        if (currentClip === null) {
 
-      "-i",
-      "list.txt",
+            showStatus(
+                "पहले video select करो."
+            );
 
-      "-c",
-      "copy",
-
-      "final.mp4"
-
-    ]);
-
-
-    // Read output
-
-    status.textContent =
-      "📦 Final video तैयार हो रही है...";
-
-
-    const output =
-      await ffmpeg.readFile(
-        "final.mp4"
-      );
-
-
-    const blob =
-      new Blob(
-        [output.buffer],
-        {
-          type: "video/mp4"
+            return;
         }
-      );
 
 
-    const downloadURL =
-      URL.createObjectURL(blob);
+        const start =
+            Number(startTime.value);
 
 
-    // Download
-
-    const link =
-      document.createElement("a");
-
-    link.href =
-      downloadURL;
-
-    link.download =
-      "My-Final-Video.mp4";
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    link.remove();
+        const end =
+            Number(endTime.value);
 
 
-    setTimeout(function () {
+        if (
+            !Number.isFinite(start) ||
+            !Number.isFinite(end) ||
+            start < 0 ||
+            end <= start
+        ) {
 
-      URL.revokeObjectURL(
-        downloadURL
-      );
+            showStatus(
+                "❌ Start और End time सही डालो."
+            );
 
-    }, 60000);
+            return;
+        }
 
 
-    status.textContent =
-      "✅ Download शुरू हो गया!";
+        const clip =
+            clips[currentClip];
 
-  } catch (error) {
 
-    console.error(error);
+        clip.start =
+            start;
 
-    status.textContent =
-      "❌ Export failed: " +
-      error.message;
 
-  } finally {
+        clip.end =
+            end;
 
-    this.disabled = false;
-  }
 
-});
+        showStatus(
+            "✅ Trim settings saved."
+        );
+
+    }
+);
+
+
+// ========================================
+// SPEED
+// ========================================
+
+speed.addEventListener(
+    "change",
+    function () {
+
+        if (currentClip === null) {
+
+            return;
+
+        }
+
+
+        const value =
+            Number(this.value);
+
+
+        clips[currentClip].speed =
+            value;
+
+
+        previewVideo.playbackRate =
+            value;
+
+
+        showStatus(
+            `Speed: ${value}x`
+        );
+
+    }
+);
+
+
+// ========================================
+// VIDEO RATIO
+// ========================================
+
+ratio.addEventListener(
+    "change",
+    function () {
+
+        if (this.value === "9:16") {
+
+            previewBox.classList.remove(
+                "landscape"
+            );
+
+            previewBox.classList.add(
+                "portrait"
+            );
+
+        } else {
+
+            previewBox.classList.remove(
+                "portrait"
+            );
+
+            previewBox.classList.add(
+                "landscape"
+            );
+
+        }
+
+    }
+);
+
+
+// ========================================
+// TEXT / CAPTION
+// ========================================
+
+addTextBtn.addEventListener(
+    "click",
+    function () {
+
+        const text =
+            caption.value.trim();
+
+
+        textOverlay.textContent =
+            text;
+
+
+        if (text) {
+
+            showStatus(
+                "📝 Caption added."
+            );
+
+        } else {
+
+            showStatus(
+                "Caption खाली है."
+            );
+
+        }
+
+    }
+);
+
+
+// ========================================
+// MUSIC
+// ========================================
+
+musicInput.addEventListener(
+    "change",
+    function () {
+
+        if (!this.files.length) {
+            return;
+        }
+
+
+        musicFile =
+            this.files[0];
+
+
+        showStatus(
+            "🎵 Music added: " +
+            musicFile.name
+        );
+
+
+        this.value = "";
+
+    }
+);
+
+
+// ========================================
+// VOICE OVER
+// ========================================
+
+voiceInput.addEventListener(
+    "change",
+    function () {
+
+        if (!this.files.length) {
+            return;
+        }
+
+
+        voiceFile =
+            this.files[0];
+
+
+        showStatus(
+            "🎙️ Voice-over added: " +
+            voiceFile.name
+        );
+
+
+        this.value = "";
+
+    }
+);
+
+
+// ========================================
+// SAVE PROJECT
+// ========================================
+
+saveProjectBtn.addEventListener(
+    "click",
+    function () {
+
+        const project = {
+
+            ratio: ratio.value,
+
+            caption: caption.value,
+
+            clips: clips.map(
+                function (clip) {
+
+                    return {
+
+                        name: clip.name,
+
+                        start: clip.start,
+
+                        end: clip.end,
+
+                        speed: clip.speed
+
+                    };
+
+                }
+            )
+
+        };
+
+
+        localStorage.setItem(
+            "myVideoEditorProject",
+            JSON.stringify(project)
+        );
+
+
+        showStatus(
+            "💾 Project settings saved."
+        );
+
+    }
+);
+
+
+// ========================================
+// EXPORT
+// ========================================
+
+exportBtn.addEventListener(
+    "click",
+    function () {
+
+        if (clips.length === 0) {
+
+            showStatus(
+                "❌ पहले video add करो."
+            );
+
+            return;
+        }
+
+
+        showStatus(
+            "⚠️ Export engine अभी नहीं जोड़ा गया है."
+        );
+
+    }
+);
+
+
+// ========================================
+// INITIAL STATE
+// ========================================
+
+renderTimeline();
+
+showStatus(
+    "Ready — Add Video करके शुरू करो."
+);
