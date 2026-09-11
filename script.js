@@ -1,30 +1,42 @@
-const { FFmpeg } = FFmpegWASM;
-const { fetchFile } = FFmpegUtil;
+// =============================
+// ELEMENTS
+// =============================
 
-const ffmpeg = new FFmpeg();
+const videoInput = document.getElementById("videoInput");
+const musicInput = document.getElementById("musicInput");
+const voiceInput = document.getElementById("voiceInput");
 
-let ffmpegLoaded = false;
+const timeline = document.getElementById("timeline");
+const previewVideo = document.getElementById("previewVideo");
+const previewBox = document.getElementById("previewBox");
 
-async function loadFFmpeg() {
-  if (ffmpegLoaded) return;
+const ratio = document.getElementById("ratio");
+const speed = document.getElementById("speed");
 
-  status.textContent = "⏳ Export engine loading...";
+const startTime = document.getElementById("startTime");
+const endTime = document.getElementById("endTime");
 
-  await ffmpeg.load({
-    coreURL:
-      "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
-    wasmURL:
-      "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm"
-  });
+const caption = document.getElementById("caption");
+const textOverlay = document.getElementById("textOverlay");
 
-  ffmpegLoaded = true;
-
-  status.textContent = "✅ Export engine ready.";
-}
+const status = document.getElementById("status");
 
 
 // =============================
-// ADD VIDEOS
+// VARIABLES
+// =============================
+
+let clips = [];
+let musicFile = null;
+let voiceFile = null;
+let currentClip = null;
+
+let ffmpeg = null;
+let ffmpegLoaded = false;
+
+
+// =============================
+// ADD VIDEO
 // =============================
 
 videoInput.addEventListener("change", function () {
@@ -33,7 +45,9 @@ videoInput.addEventListener("change", function () {
 
   files.forEach(function (file) {
 
-    if (!file.type.startsWith("video/")) return;
+    if (!file.type.startsWith("video/")) {
+      return;
+    }
 
     clips.push({
       file: file,
@@ -64,7 +78,10 @@ function renderTimeline() {
   timeline.innerHTML = "";
 
   if (clips.length === 0) {
-    timeline.innerHTML = "<p>No videos added yet.</p>";
+
+    timeline.innerHTML =
+      "<p>No videos added yet.</p>";
+
     return;
   }
 
@@ -127,13 +144,12 @@ function selectClip(index) {
       clip.end !== null
         ? clip.end
         : previewVideo.duration;
-
   };
 }
 
 
 // =============================
-// MOVE
+// MOVE LEFT
 // =============================
 
 function moveLeft(index) {
@@ -144,9 +160,14 @@ function moveLeft(index) {
     [clips[index], clips[index - 1]];
 
   renderTimeline();
+
   selectClip(index - 1);
 }
 
+
+// =============================
+// MOVE RIGHT
+// =============================
 
 function moveRight(index) {
 
@@ -156,6 +177,7 @@ function moveRight(index) {
     [clips[index], clips[index + 1]];
 
   renderTimeline();
+
   selectClip(index + 1);
 }
 
@@ -197,7 +219,13 @@ function deleteClip(index) {
 document.getElementById("trimBtn")
 .addEventListener("click", function () {
 
-  if (currentClip === null) return;
+  if (currentClip === null) {
+
+    status.textContent =
+      "पहले video select करो.";
+
+    return;
+  }
 
   const start = Number(startTime.value);
   const end = Number(endTime.value);
@@ -231,7 +259,6 @@ speed.addEventListener("change", function () {
   clips[currentClip].speed = value;
 
   previewVideo.playbackRate = value;
-
 });
 
 
@@ -250,7 +277,6 @@ ratio.addEventListener("change", function () {
 
     previewBox.classList.remove("portrait");
     previewBox.classList.add("landscape");
-
   }
 });
 
@@ -264,7 +290,6 @@ document.getElementById("addText")
 
   textOverlay.textContent =
     caption.value;
-
 });
 
 
@@ -280,7 +305,6 @@ musicInput.addEventListener("change", function () {
 
     status.textContent =
       "🎵 Music added: " + musicFile.name;
-
   }
 });
 
@@ -297,13 +321,12 @@ voiceInput.addEventListener("change", function () {
 
     status.textContent =
       "🎙️ Voice-over added: " + voiceFile.name;
-
   }
 });
 
 
 // =============================
-// SAVE
+// SAVE PROJECT
 // =============================
 
 document.getElementById("saveProject")
@@ -321,7 +344,6 @@ document.getElementById("saveProject")
         end: clip.end,
         speed: clip.speed
       };
-
     }),
 
     caption: caption.value
@@ -334,8 +356,51 @@ document.getElementById("saveProject")
 
   status.textContent =
     "💾 Project settings saved.";
-
 });
+
+
+// =============================
+// LOAD FFMPEG
+// =============================
+
+async function loadFFmpeg() {
+
+  if (ffmpegLoaded) return;
+
+  if (
+    typeof FFmpegWASM === "undefined" ||
+    typeof FFmpegUtil === "undefined"
+  ) {
+
+    throw new Error(
+      "FFmpeg library load नहीं हुई."
+    );
+  }
+
+  ffmpeg =
+    new FFmpegWASM.FFmpeg();
+
+  status.textContent =
+    "⏳ Export engine loading...";
+
+  const baseURL =
+    "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+
+  await ffmpeg.load({
+
+    coreURL:
+      baseURL + "/ffmpeg-core.js",
+
+    wasmURL:
+      baseURL + "/ffmpeg-core.wasm"
+
+  });
+
+  ffmpegLoaded = true;
+
+  status.textContent =
+    "✅ Export engine ready.";
+}
 
 
 // =============================
@@ -360,10 +425,10 @@ document.getElementById("exportBtn")
     await loadFFmpeg();
 
     status.textContent =
-      "🎬 सभी videos तैयार हो रही हैं...";
+      "🎬 Videos तैयार हो रही हैं...";
 
 
-    // Write videos to FFmpeg
+    // Upload clips into FFmpeg
 
     for (let i = 0; i < clips.length; i++) {
 
@@ -371,7 +436,9 @@ document.getElementById("exportBtn")
         `⏳ Video ${i + 1}/${clips.length} loading...`;
 
       const data =
-        await fetchFile(clips[i].file);
+        await FFmpegUtil.fetchFile(
+          clips[i].file
+        );
 
       await ffmpeg.writeFile(
         `input${i}.mp4`,
@@ -380,14 +447,13 @@ document.getElementById("exportBtn")
     }
 
 
-    // Create concat list
+    // Create list
 
     let list = "";
 
     for (let i = 0; i < clips.length; i++) {
 
       list += `file 'input${i}.mp4'\n`;
-
     }
 
     await ffmpeg.writeFile(
@@ -399,36 +465,46 @@ document.getElementById("exportBtn")
     // Merge
 
     status.textContent =
-      "🔗 सभी clips जोड़ी जा रही हैं...";
+      "🔗 Clips जोड़ी जा रही हैं...";
 
 
     await ffmpeg.exec([
+
       "-f",
       "concat",
+
       "-safe",
       "0",
+
       "-i",
       "list.txt",
+
       "-c",
       "copy",
+
       "final.mp4"
+
     ]);
 
 
-    // Read final file
+    // Read output
 
     status.textContent =
       "📦 Final video तैयार हो रही है...";
 
 
     const output =
-      await ffmpeg.readFile("final.mp4");
+      await ffmpeg.readFile(
+        "final.mp4"
+      );
 
 
     const blob =
       new Blob(
         [output.buffer],
-        { type: "video/mp4" }
+        {
+          type: "video/mp4"
+        }
       );
 
 
@@ -436,12 +512,13 @@ document.getElementById("exportBtn")
       URL.createObjectURL(blob);
 
 
-    // Automatic download
+    // Download
 
     const link =
       document.createElement("a");
 
-    link.href = downloadURL;
+    link.href =
+      downloadURL;
 
     link.download =
       "My-Final-Video.mp4";
@@ -455,26 +532,27 @@ document.getElementById("exportBtn")
 
     setTimeout(function () {
 
-      URL.revokeObjectURL(downloadURL);
+      URL.revokeObjectURL(
+        downloadURL
+      );
 
     }, 60000);
 
 
     status.textContent =
-      "✅ Final video download शुरू हो गया!";
-
+      "✅ Download शुरू हो गया!";
 
   } catch (error) {
 
     console.error(error);
 
     status.textContent =
-      "❌ Export failed: " + error.message;
+      "❌ Export failed: " +
+      error.message;
 
   } finally {
 
     this.disabled = false;
-
   }
 
 });
